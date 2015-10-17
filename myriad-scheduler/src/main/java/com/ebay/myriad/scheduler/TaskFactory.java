@@ -119,7 +119,7 @@ public interface TaskFactory {
     
     private CommandInfo getCommandInfo(TaskID taskId) {
       CommandInfo.Builder commandInfo = CommandInfo.newBuilder();
-      String cmd = NM_DEPLOY_SCRIPT + " " + taskId + " " + cfg.getClusterId() + " " + "maprdocker.lab/hackday-ubuntu:nm";
+      String cmd = NM_DEPLOY_SCRIPT + " " + taskId.getValue() + " " + cfg.getClusterId() + " " + "maprdocker.lab/hackday-ubuntu:nm";
       commandInfo.setValue("echo \"" + cmd + "\";" + cmd);
       /*
         if (cfg.getFrameworkUser().isPresent()) {
