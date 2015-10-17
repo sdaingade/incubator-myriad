@@ -25,13 +25,10 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 import com.ebay.myriad.configuration.MyriadConfiguration;
-import com.ebay.myriad.configuration.MyriadExecutorConfiguration;
 import com.ebay.myriad.state.NodeTask;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import org.apache.mesos.Protos.CommandInfo;
-import org.apache.mesos.Protos.CommandInfo.URI;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.ExecutorInfo;
 import org.apache.mesos.Protos.FrameworkID;
@@ -54,6 +51,8 @@ public interface TaskFactory {
   static final String YARN_RESOURCEMANAGER_WEBAPP_HTTPS_ADDRESS = "yarn.resourcemanager.webapp.https.address";
   static final String YARN_HTTP_POLICY = "yarn.http.policy";
   static final String YARN_HTTP_POLICY_HTTPS_ONLY = "HTTPS_ONLY";
+  
+  static final String NM_DEPLOY_SCRIPT = "/root/global-hack-day-3/OnDemandYARNClusters/scripts/docker_deploy.sh";
 
   TaskInfo createTask(Offer offer, FrameworkID frameworkId, 
     TaskID taskId, NodeTask nodeTask);
@@ -117,7 +116,20 @@ public interface TaskFactory {
       Long [] portArray = ports.toArray(new Long [ports.size()]);
       return new NMPorts(portArray);
     }
+    
+    private CommandInfo getCommandInfo(TaskID taskId) {
+      CommandInfo.Builder commandInfo = CommandInfo.newBuilder();
+      String cmd = NM_DEPLOY_SCRIPT + " " + taskId + " " + cfg.getClusterId() + " " + "maprdocker.lab/hackday-ubuntu:nm";
+      commandInfo.setValue("echo \"" + cmd + "\";" + cmd);
+      /*
+        if (cfg.getFrameworkUser().isPresent()) {
+          commandInfo.setUser(cfg.getFrameworkUser().get());
+        }
+      */
+      return commandInfo.build();
+    }
 
+/*    
     @VisibleForTesting
     CommandInfo getCommandInfo(ServiceResourceProfile profile, NMPorts ports) {
       MyriadExecutorConfiguration myriadExecutorConfiguration = cfg.getMyriadExecutorConfiguration();
@@ -157,14 +169,15 @@ public interface TaskFactory {
       }
       return commandInfo.build();
     }
+*/
 
     @Override
     public TaskInfo createTask(Offer offer, FrameworkID frameworkId, TaskID taskId, NodeTask nodeTask) {
       Objects.requireNonNull(offer, "Offer should be non-null");
       Objects.requireNonNull(nodeTask, "NodeTask should be non-null");
 
-      NMPorts ports = getPorts(offer);
-      LOGGER.debug(ports.toString());
+      //NMPorts ports = getPorts(offer);
+      //LOGGER.debug(ports.toString());
 
       ServiceResourceProfile serviceProfile = nodeTask.getProfile();
       Scalar taskMemory = Scalar.newBuilder()
@@ -174,8 +187,9 @@ public interface TaskFactory {
           .setValue(serviceProfile.getAggregateCpu())
           .build();
 
-      CommandInfo commandInfo = getCommandInfo(serviceProfile, ports);
-      ExecutorInfo executorInfo = getExecutorInfoForSlave(frameworkId, offer, commandInfo);
+      //CommandInfo commandInfo = getCommandInfo(serviceProfile, ports);
+      //ExecutorInfo executorInfo = getExecutorInfoForSlave(frameworkId, offer, commandInfo);
+      CommandInfo commandInfo = getCommandInfo(taskId);
 
       TaskInfo.Builder taskBuilder = TaskInfo.newBuilder()
           .setName("task-" + taskId.getValue())
@@ -193,6 +207,8 @@ public interface TaskFactory {
                   .setType(Value.Type.SCALAR)
                   .setScalar(taskMemory)
                   .build())
+          .setCommand(commandInfo).build();
+/*                  
           .addResources(
               Resource.newBuilder().setName("ports")
                   .setType(Value.Type.RANGES)
@@ -214,6 +230,7 @@ public interface TaskFactory {
                           .setEnd(ports.getShufflePort())
                           .build())))
           .setExecutor(executorInfo).build();
+*/
     }
 
     @Override
