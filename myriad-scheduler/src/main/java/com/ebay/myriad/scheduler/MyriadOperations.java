@@ -63,7 +63,7 @@ public class MyriadOperations {
         Collection<NodeTask> nodes = new HashSet<>();
         for (int i = 0; i < instances; i++) {
           NodeTask nodeTask = new NodeTask(serviceResourceProfile, constraint);
-          nodeTask.setTaskPrefix(NodeManagerConfiguration.NM_TASK_PREFIX);
+          nodeTask.setTaskPrefix(cfg.getFrameworkName() + "." + NodeManagerConfiguration.NM_TASK_PREFIX);
           nodes.add(nodeTask);
         }
 

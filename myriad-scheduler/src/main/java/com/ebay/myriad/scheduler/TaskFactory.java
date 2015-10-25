@@ -28,6 +28,7 @@ import com.ebay.myriad.configuration.MyriadConfiguration;
 import com.ebay.myriad.state.NodeTask;
 import com.google.common.base.Preconditions;
 
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.mesos.Protos.CommandInfo;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.ExecutorInfo;
@@ -119,14 +120,29 @@ public interface TaskFactory {
     
     private CommandInfo getCommandInfo(TaskID taskId) {
       CommandInfo.Builder commandInfo = CommandInfo.newBuilder();
-      String cmd = NM_DEPLOY_SCRIPT + " " + taskId.getValue() + " " + cfg.getClusterId() + " " + "maprdocker.lab/hackday-ubuntu:nm";
-      commandInfo.setValue("echo \"" + cmd + "\";" + cmd);
+      StringBuilder cmdLine = new StringBuilder();
+      cmdLine.append(NM_DEPLOY_SCRIPT);
+      appendProperty(cmdLine, "TYPE", "NM");
+      appendProperty(cmdLine, "NAME", taskId.getValue());
+      appendProperty(cmdLine, "CLUSTER", cfg.getFrameworkName());
+      appendProperty(cmdLine, "IMAGE", "maprdocker.lab/hackday-ubuntu:nm");
+      appendProperty(cmdLine, "NM_OCTET", Integer.toString(cfg.getNmOctet()));
+
+      YarnConfiguration conf = new YarnConfiguration();
+      appendProperty(cmdLine, "RM_IP", conf.get(TaskFactory.YARN_RESOURCEMANAGER_HOSTNAME));
+      commandInfo.setValue("echo \"" + cmdLine.toString() + "\";" + cmdLine.toString());
+
       /*
         if (cfg.getFrameworkUser().isPresent()) {
           commandInfo.setUser(cfg.getFrameworkUser().get());
         }
       */
       return commandInfo.build();
+    }
+    
+    private void appendProperty(StringBuilder cmdLine, String key, String value) {
+      cmdLine.append(" -" + key);
+      cmdLine.append(" " + value);
     }
 
 /*    

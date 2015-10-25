@@ -156,6 +156,8 @@ public class MyriadConfiguration {
 
   @JsonProperty
   private String clusterId;
+  
+  private int nmOctet = 3;
 
   public MyriadConfiguration() {
   }
@@ -256,5 +258,9 @@ public class MyriadConfiguration {
 
   public String getClusterId() {
     return clusterId;
+  }
+
+  public int getNmOctet() {
+    return nmOctet++;
   }
 }
